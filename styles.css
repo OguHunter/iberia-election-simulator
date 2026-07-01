@@ -752,19 +752,54 @@ input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
   padding-top: 19px;
 }
 
-.nation-result-list { display: grid; gap: 8px; }
+.nation-result-list {
+  display: grid;
+  gap: 8px;
+}
 
+.nation-result-header,
 .nation-result-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.68fr) minmax(120px, 1fr) 62px 60px;
+  grid-template-columns:
+    minmax(110px, 0.68fr)
+    minmax(120px, 1fr)
+    70px
+    76px
+    62px;
   align-items: center;
   gap: 9px;
+}
+
+.nation-result-header {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nation-result-row {
   font-size: 0.7rem;
 }
 
-.nation-result-row__track { height: 8px; overflow: hidden; background: #edf1f5; border-radius: 999px; }
-.nation-result-row__fill { display: block; height: 100%; border-radius: inherit; }
+.nation-result-header > span:nth-child(n + 3),
+.nation-result-row > :nth-child(n + 3) {
+  text-align: right;
+}
 
+.nation-result-row__track {
+  height: 8px;
+  overflow: hidden;
+  background: #edf1f5;
+  border-radius: 999px;
+}
+
+.nation-result-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
 
 .member-mini-list {
   display: flex;
@@ -785,7 +820,14 @@ input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
   font-size: 0.61rem;
 }
 
-.member-mini-list strong { color: var(--text); }
+.member-mini-list strong {
+  color: var(--text);
+}
+
+.member-mini-list small {
+  color: var(--muted);
+  font-size: inherit;
+}
 
 .nation-institution-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 
@@ -1446,4 +1488,17 @@ input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
   .admin-slider-row { grid-template-columns: 1fr 1fr 70px 30px; }
   .admin-slider-row label { grid-column: 1 / -1; }
   .page-footer { align-items: flex-start; flex-direction: column; }
+    .nation-result-header,
+  .nation-result-row {
+    grid-template-columns: minmax(95px, 1fr) 64px 64px 54px;
+  }
+
+  .nation-result-header > span:nth-child(2),
+  .nation-result-row__track {
+    display: none;
+  }
+
+  .member-mini-list {
+    margin-left: 0;
+  }
 }

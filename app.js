@@ -69,7 +69,7 @@ const supabaseClient = window.supabase.createClient(
       memberAffinityTitle: "Internal competition between member parties",
       memberAffinityHint: "Member affinities only divide their list’s existing vote. They never change the list total in a province.",
       listStrength: "List territorial strength λ", memberStrength: "Member competition strength λ",
-      neutralOne: "1.00 is neutral.", factorScale: "Factor scale: −1 to +1.",
+      neutralOne: "1.00 is neutral.", localMultiplier: "Local organisational multiplier", factorScale: "Factor scale: −1 to +1.",
       profileTitle: "Province characteristics", profileHint: "Province traits use a −2 to +2 scale. Turnout changes the province’s electoral weight.",
       turnoutWeight: "Turnout / weight", splitTitle: "Internal distribution of the 200 Iberia-wide seats",
       splitHint: "Choose whether the list’s seats follow general member weights or a dedicated manual percentage.",
@@ -150,7 +150,7 @@ const supabaseClient = window.supabase.createClient(
       memberAffinityTitle: "Competencia interna entre partidos miembros",
       memberAffinityHint: "Las afinidades de miembros solo dividen el voto ya existente de su lista. Nunca cambian el total de la lista en una provincia.",
       listStrength: "Fuerza territorial de listas λ", memberStrength: "Fuerza de competición interna λ",
-      neutralOne: "1,00 es neutral.", factorScale: "Escala de factores: −1 a +1.",
+      neutralOne: "1,00 es neutral.", localMultiplier: "Multiplicador organizativo local", factorScale: "Escala de factores: −1 a +1.",
       profileTitle: "Características provinciales", profileHint: "Los rasgos provinciales usan una escala de −2 a +2. La participación cambia el peso electoral.",
       turnoutWeight: "Participación / peso", splitTitle: "Distribución interna de los 200 escaños ibéricos",
       splitHint: "Elige si los escaños siguen los pesos generales o un porcentaje manual exclusivo para este nivel.",
@@ -971,26 +971,62 @@ async function init() {
       const winner = state.lists[winnerIndex];
       const open = ui.openNation === nation.id;
 
+            const nationTotalVotes = sum(calculation.nationListVotes[nation.id]);
+
       const listRows = state.lists.map((list, listIndex) => ({
-        list, listIndex, share: calculation.nationListShares[nation.id][listIndex]
-      })).sort((a, b) => b.share - a.share).map(({ list, listIndex, share }) => `
-        <div class="nation-result-row">
-          <span>${entityCell(list)}</span>
-          <span class="nation-result-row__track"><span class="nation-result-row__fill" style="width:${share * 100}%;background:${list.colour}"></span></span>
-          <strong>${formatPercent(share)}</strong>
-          <span>${calculation.nationListParliamentSeats[nation.id][listIndex]} / ${calculation.nationListSenateSeats[nation.id][listIndex]}</span>
-        </div>
-        ${list.members.length > 1 ? `
-          <div class="member-mini-list">
-            ${list.members.map((member, memberIndex) => {
-              const listVote = calculation.nationListVotes[nation.id][listIndex];
-              const internalShare = listVote > 0
-                ? calculation.nationMemberVotes[nation.id][listIndex][memberIndex] / listVote
-                : 0;
-              return `<span>${memberCell(member, list)} <strong>${formatPercent(internalShare)}</strong></span>`;
-            }).join("")}
-          </div>` : ""}
-      `).join("");
+        list,
+        listIndex,
+        share: calculation.nationListShares[nation.id][listIndex]
+      }))
+        .sort((a, b) => b.share - a.share)
+        .map(({ list, listIndex, share }) => `
+          <div class="nation-result-row">
+            <span>${entityCell(list)}</span>
+
+            <span class="nation-result-row__track">
+              <span
+                class="nation-result-row__fill"
+                style="width:${share * 100}%;background:${list.colour}"
+              ></span>
+            </span>
+
+            <strong>${formatPercent(share)}</strong>
+
+            <strong>
+              ${calculation.nationListParliamentSeats[nation.id][listIndex]}
+            </strong>
+
+            <strong>
+              ${calculation.nationListSenateSeats[nation.id][listIndex]}
+            </strong>
+          </div>
+
+          ${list.members.length > 1 ? `
+            <div class="member-mini-list">
+              ${list.members.map((member, memberIndex) => {
+                const memberVotes =
+                  calculation.nationMemberVotes[nation.id][listIndex][memberIndex];
+
+                const totalShare = nationTotalVotes > 0
+                  ? memberVotes / nationTotalVotes
+                  : 0;
+
+                const senateSeats =
+                  calculation.nationMemberSenateSeats[nation.id][listIndex][memberIndex];
+
+                return `
+                  <span>
+                    ${memberCell(member, list)}
+                    <strong>${formatPercent(totalShare)}</strong>
+                    <small>
+                      · ${senateSeats} ${t("senate").toLowerCase()}
+                    </small>
+                  </span>
+                `;
+              }).join("")}
+            </div>
+          ` : ""}
+        `).join("");
 
       const provinceButtons = provinces.map(province => {
         const provinceIndex = PROVINCES.findIndex(item => item.name === province.name);
@@ -1025,7 +1061,16 @@ async function init() {
               <div class="nation-card__detail-content">
                 <div class="nation-detail-grid">
                   <div>
-                    <h3>${t("aggregateResult")}</h3>
+                                        <h3>${t("aggregateResult")}</h3>
+
+                    <div class="nation-result-header">
+                      <span>${t("electoralList")}</span>
+                      <span></span>
+                      <span>${t("percentage")}</span>
+                      <span>${t("parliament")}</span>
+                      <span>${t("senate")}</span>
+                    </div>
+
                     <div class="nation-result-list">${listRows}</div>
                   </div>
                   <div class="nation-institution-grid">
@@ -1453,9 +1498,16 @@ async function init() {
 
       <section class="admin-block">
         <div class="admin-block__header"><strong>${t("administrativeNations")}</strong></div>
-        ${NATIONS.map(nation => adminSlider({
-          label: t(nation.id), value: list.nationAffinity[nation.id], min: 0.5, max: 1.5, step: 0.01,
-          action: "list-nation-affinity", listId: list.id, key: nation.id, reset: 1
+                ${NATIONS.map(nation => adminSlider({
+          label: `${t(nation.id)} · ${t("localMultiplier")}`,
+          value: list.nationAffinity[nation.id],
+          min: 0.01,
+          max: 200,
+          step: 0.01,
+          action: "list-nation-affinity",
+          listId: list.id,
+          key: nation.id,
+          reset: 1
         })).join("")}
       </section>
 
@@ -1495,9 +1547,17 @@ async function init() {
 
       <section class="admin-block">
         <div class="admin-block__header"><strong>${t("administrativeNations")}</strong></div>
-        ${NATIONS.map(nation => adminSlider({
-          label: t(nation.id), value: member.nationAffinity[nation.id], min: 0.5, max: 1.5, step: 0.01,
-          action: "member-nation-affinity", listId: list.id, memberId: member.id, key: nation.id, reset: 1
+                ${NATIONS.map(nation => adminSlider({
+          label: `${t(nation.id)} · ${t("localMultiplier")}`,
+          value: member.nationAffinity[nation.id],
+          min: 0.01,
+          max: 200,
+          step: 0.01,
+          action: "member-nation-affinity",
+          listId: list.id,
+          memberId: member.id,
+          key: nation.id,
+          reset: 1
         })).join("")}
       </section>
 
@@ -2048,9 +2108,15 @@ async function init() {
 
     if (action === "list-lambda") state.listLambda = clamp(numberOr(value, 0), 0, 2);
     if (action === "member-lambda") state.memberLambda = clamp(numberOr(value, 0), 0, 2);
-    if (action === "list-nation-affinity") list.nationAffinity[element.dataset.key] = clamp(numberOr(value, 1), 0.1, 3);
+    if (action === "list-nation-affinity") {
+  list.nationAffinity[element.dataset.key] =
+    clamp(numberOr(value, 1), 0.01, 200);
+}
     if (action === "list-factor-affinity") list.factorAffinity[element.dataset.key] = clamp(numberOr(value, 0), -1, 1);
-    if (action === "member-nation-affinity") member.nationAffinity[element.dataset.key] = clamp(numberOr(value, 1), 0.1, 3);
+    if (action === "member-nation-affinity") {
+  member.nationAffinity[element.dataset.key] =
+    clamp(numberOr(value, 1), 0.01, 200);
+}
     if (action === "member-factor-affinity") member.factorAffinity[element.dataset.key] = clamp(numberOr(value, 0), -1, 1);
     if (action === "province-turnout") state.provinceSettings[element.dataset.province].turnout = clamp(numberOr(value, 1), 0.1, 3);
     if (action === "province-trait") state.provinceSettings[element.dataset.province].traits[element.dataset.key] = clamp(numberOr(value, 0), -2, 2);
