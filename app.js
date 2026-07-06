@@ -3,7 +3,8 @@
 
   const ADMIN_PASSWORD = "iberia2058";
   const STORAGE_KEY_V2 = "iberian-election-simulator-v2";
-  const STORAGE_KEY_V1 = "iberian-election-simulator-v1";
+const STORAGE_KEY_V1 = "iberian-election-simulator-v1";
+const PROVINCE_PROFILE_VERSION = 2;
 
   const SUPABASE_URL = "https://btayswfknmifedbstkfl.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YXlzd2Zrbm1pZmVkYnN0a2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4ODkyODEsImV4cCI6MjA5ODQ2NTI4MX0.XP2F68G792B6Jgz6xuZZBV3z3Kx7duxNkFBbcmA1Rws";
@@ -42,7 +43,7 @@ const supabaseClient = window.supabase.createClient(
       directSenators: "Directly elected senators", directSenatorBreakdown: "Portugal 12 · Catalonia 11 · Basque Country 10 · Spain 14",
       direct: "direct", roleplay: "ROLEPLAY", institutionalSenators: "Institutional senators",
       institutionalHint: "Two are sent by each Administrative Nation. They are assigned manually in admin mode.",
-      assigned: "Assigned", localApp: "Local HTML, CSS and JavaScript application", resetSimulation: "Reset simulation",
+      assigned: "Assigned", localApp: "Made by Villa", resetSimulation: "Reset simulation",
       newList: "NEW LIST", addElectoralList: "Add electoral list", fullName: "Full name", abbreviation: "Abbreviation",
       colour: "Colour", initialResult: "Initial result", cancel: "Cancel", newMember: "NEW MEMBER",
       addMemberParty: "Add member party", organisationalWeight: "Organisational weight", access: "ACCESS",
@@ -93,8 +94,17 @@ const supabaseClient = window.supabase.createClient(
       confirmDeleteList: "Delete this electoral list and all its members?", confirmDeleteMember: "Delete this member party?",
       confirmReset: "Reset the entire simulation?", scenarioPrompt: "Scenario name:", language: "Language",
       Portugal: "Portugal", Catalonia: "Catalonia", Basque: "Basque Country", Spain: "Spain",
-      urban: "Urbanisation", rural: "Rurality", industry: "Industry / workers", identity: "Regional identity",
-      autonomy: "Autonomism", tradition: "Tradition", professional: "Professional / higher income", periphery: "Periphery / insularity"
+      urban: "Urbanisation",
+      rural: "Rurality",
+      industry: "Industrial / blue-collar employment",
+      agriculture: "Agriculture / smallholding",
+      identity: "Regional identity",
+      autonomy: "Autonomism / decentralisation",
+      tradition: "Religiosity / traditional social values",
+      education: "Education / knowledge-professional population",
+      affluence: "Affluence / business ownership",
+      migration: "Diversity / migration exposure",
+      periphery: "Periphery / remoteness / insularity"
     },
     es: {
       appTitle: "Simulador Electoral de Iberia",
@@ -174,21 +184,33 @@ const supabaseClient = window.supabase.createClient(
       confirmDeleteList: "¿Eliminar esta lista electoral y todos sus miembros?", confirmDeleteMember: "¿Eliminar este partido miembro?",
       confirmReset: "¿Restaurar toda la simulación?", scenarioPrompt: "Nombre del escenario:", language: "Idioma",
       Portugal: "Portugal", Catalonia: "Cataluña", Basque: "País Vasco", Spain: "España",
-      urban: "Urbanización", rural: "Ruralidad", industry: "Industria / trabajadores", identity: "Identidad regional",
-      autonomy: "Autonomismo", tradition: "Tradición", professional: "Renta profesional / alta", periphery: "Periferia / insularidad"
+      urban: "Urbanización",
+      rural: "Ruralidad",
+      industry: "Industria / empleo obrero",
+      agriculture: "Agricultura / pequeña propiedad",
+      identity: "Identidad regional",
+      autonomy: "Autonomismo / descentralización",
+      tradition: "Religiosidad / valores sociales tradicionales",
+      education: "Educación / población profesional y del conocimiento",
+      affluence: "Riqueza / propiedad empresarial",
+      migration: "Diversidad / exposición migratoria",
+      periphery: "Periferia / lejanía / insularidad"
     }
   };
 
   const FACTORS = [
-    { id: "urban", labelKey: "urban" },
-    { id: "rural", labelKey: "rural" },
-    { id: "industry", labelKey: "industry" },
-    { id: "identity", labelKey: "identity" },
-    { id: "autonomy", labelKey: "autonomy" },
-    { id: "tradition", labelKey: "tradition" },
-    { id: "professional", labelKey: "professional" },
-    { id: "periphery", labelKey: "periphery" }
-  ];
+  { id: "urban", labelKey: "urban" },
+  { id: "rural", labelKey: "rural" },
+  { id: "industry", labelKey: "industry" },
+  { id: "agriculture", labelKey: "agriculture" },
+  { id: "identity", labelKey: "identity" },
+  { id: "autonomy", labelKey: "autonomy" },
+  { id: "tradition", labelKey: "tradition" },
+  { id: "education", labelKey: "education" },
+  { id: "affluence", labelKey: "affluence" },
+  { id: "migration", labelKey: "migration" },
+  { id: "periphery", labelKey: "periphery" }
+];
 
   const NATIONS = [
     { id: "Portugal", colour: "#2E7D32", parliamentSeats: 230, directSenators: 12 },
@@ -198,44 +220,52 @@ const supabaseClient = window.supabase.createClient(
   ];
 
   const PROVINCES = [
-    ["Portugal","Norte",2428125,10,[0,1,1,1,0,1,-1,0]],
-    ["Portugal","Centro",1365849,6,[-1,2,0,1,0,1,-1,0]],
-    ["Portugal","Lisboa",3098408,13,[2,-2,1,0,-1,-1,2,0]],
-    ["Portugal","Alentejo",352794,1,[-2,2,-1,1,0,1,-1,1]],
-    ["Portugal","Algarve",365943,1,[0,1,-1,1,0,0,0,1]],
-    ["Portugal","Azores",182568,1,[-1,1,-1,2,1,1,-1,2]],
-    ["Portugal","Madeira",193634,1,[0,1,-1,2,1,1,0,2]],
-    ["Catalonia","Barcelona",4965310,20,[2,-2,2,2,2,-1,2,0]],
-    ["Catalonia","Girona",691842,3,[0,1,0,2,2,0,0,0]],
-    ["Catalonia","Lleida",381754,2,[-1,2,0,2,2,1,-1,0]],
-    ["Catalonia","Tarragona",729416,3,[1,0,1,2,2,0,0,0]],
-    ["Catalonia","Rosselló",424332,2,[0,1,0,2,2,0,0,1]],
-    ["Basque","Bizkaia",1102803,5,[1,-1,2,2,2,0,1,0]],
-    ["Basque","Gipuzkoa",692680,3,[0,0,2,2,2,0,1,0]],
-    ["Basque","Araba",311809,1,[0,1,1,2,2,1,0,0]],
-    ["Basque","Nafarroa",179512,1,[-1,1,0,2,2,2,0,0]],
-    ["Basque","Iparralde",311648,1,[0,1,0,2,2,1,0,1]],
-    ["Spain","Galicia",1475853,6,[-1,2,0,2,2,1,-1,1]],
-    ["Spain","Asturias",551868,2,[0,1,2,1,1,0,-1,1]],
-    ["Spain","Cantabria",322720,1,[0,1,0,1,0,1,0,0]],
-    ["Spain","León",512134,2,[-1,2,0,2,1,1,-1,1]],
-    ["Spain","Castilla",793275,3,[-1,2,-1,1,0,2,-1,0]],
-    ["Spain","Ebro",452634,2,[0,1,1,1,1,1,0,0]],
-    ["Spain","Aragón",741868,3,[0,1,1,2,2,1,0,0]],
-    ["Spain","Valencia",2949368,12,[1,0,1,2,1,0,1,0]],
-    ["Spain","Baleares",679470,3,[1,0,-1,1,1,0,1,2]],
-    ["Spain","Canarias",1228019,5,[1,0,-1,2,2,0,0,2]],
-    ["Spain","Granada",2242900,9,[0,1,0,1,0,0,-1,0]],
-    ["Spain","Sevilla",2474143,10,[1,0,1,1,0,0,0,0]],
-    ["Spain","Extremadura",572645,2,[-2,2,-1,1,0,2,-2,1]],
-    ["Spain","Madrid",3867421,15,[2,-2,1,-1,-2,-1,2,0]],
-    ["Spain","Castilla la Nueva",2018750,9,[0,1,0,1,0,1,0,0]],
-    ["Spain","Ceuta",45431,1,[1,-1,0,1,0,1,-1,2]],
-    ["Spain","Melilla",47333,1,[1,-1,0,1,0,1,-1,2]]
-  ].map(([nation,name,population,congressSeats,values]) => ({
-    nation, name, population, congressSeats,
-    traits: Object.fromEntries(FACTORS.map((factor, index) => [factor.id, values[index]]))
-  }));
+  ["Portugal","Norte",2428125,10,[0,1,2,1,1,0,2,0,0,0,0]],
+  ["Portugal","Centro",1365849,6,[-1,2,1,2,1,0,1,1,-1,-1,0]],
+  ["Portugal","Lisboa",3098408,13,[2,-1,1,0,0,-1,-1,2,2,2,0]],
+  ["Portugal","Alentejo",352794,1,[-2,2,-1,2,1,0,0,-1,-2,0,1]],
+  ["Portugal","Algarve",365943,1,[0,0,-2,1,1,0,0,0,1,2,1]],
+  ["Portugal","Azores",182568,1,[-1,1,-1,2,2,2,2,-1,-1,0,2]],
+  ["Portugal","Madeira",193634,1,[0,1,-1,1,2,2,2,0,0,1,2]],
+
+  ["Catalonia","Barcelona",4965310,20,[2,-2,2,-2,2,2,-1,2,2,2,0]],
+  ["Catalonia","Girona",691842,3,[0,1,1,1,2,2,0,1,1,1,0]],
+  ["Catalonia","Lleida",381754,2,[-1,2,0,2,2,2,1,0,0,0,1]],
+  ["Catalonia","Tarragona",729416,3,[1,0,2,1,2,2,0,1,0,1,0]],
+  ["Catalonia","Rosselló",424332,2,[0,1,-1,1,2,2,0,0,-1,1,2]],
+
+  ["Basque","Bizkaia",1102803,5,[1,-1,2,-1,2,2,0,1,1,1,0]],
+  ["Basque","Gipuzkoa",692680,3,[0,0,2,0,2,2,0,2,1,0,0]],
+  ["Basque","Araba",311809,1,[0,1,2,1,2,2,1,1,1,0,0]],
+  ["Basque","Nafarroa",179512,1,[-1,1,0,1,2,2,2,0,0,-1,1]],
+  ["Basque","Iparralde",311648,1,[0,1,-1,1,2,2,1,1,1,1,2]],
+
+  ["Spain","Galicia",1475853,6,[-1,2,1,2,2,2,1,0,-1,-1,1]],
+  ["Spain","Asturias",551868,2,[0,1,2,0,1,1,0,0,-1,-1,1]],
+  ["Spain","Cantabria",322720,1,[0,1,1,1,1,0,1,0,0,0,0]],
+  ["Spain","León",512134,2,[-1,2,1,2,2,1,1,-1,-1,-1,1]],
+  ["Spain","Castilla",793275,3,[-1,2,0,2,1,0,2,0,0,-1,0]],
+  ["Spain","Ebro",452634,2,[0,1,1,2,1,1,1,0,1,0,0]],
+  ["Spain","Aragón",741868,3,[0,1,1,2,2,2,1,1,0,0,1]],
+  ["Spain","Valencia",2949368,12,[1,0,1,1,2,1,0,1,1,2,0]],
+  ["Spain","Baleares",679470,3,[1,0,-1,0,2,1,0,1,2,2,2]],
+  ["Spain","Canarias",1228019,5,[1,0,-1,1,2,2,0,0,0,2,2]],
+  ["Spain","Granada",2242900,9,[0,1,0,2,1,0,1,1,0,1,0]],
+  ["Spain","Sevilla",2474143,10,[1,0,1,1,1,0,1,1,-1,0,0]],
+  ["Spain","Extremadura",572645,2,[-2,2,-1,2,1,0,2,-2,-2,-1,1]],
+  ["Spain","Madrid",3867421,15,[2,-2,1,-2,-1,-2,-1,2,2,2,-2]],
+  ["Spain","Castilla la Nueva",2018750,9,[0,1,1,2,1,0,1,0,0,1,0]],
+  ["Spain","Ceuta",45431,1,[2,-2,-2,-2,2,1,2,-1,-1,2,2]],
+  ["Spain","Melilla",47333,1,[2,-2,-2,-2,2,1,2,-1,-1,2,2]]
+].map(([nation,name,population,congressSeats,values]) => ({
+  nation,
+  name,
+  population,
+  congressSeats,
+  traits: Object.fromEntries(
+    FACTORS.map((factor, index) => [factor.id, values[index]])
+  )
+}));
 
   const neutralNationMap = () => Object.fromEntries(NATIONS.map(n => [n.id, 1]));
   const trueNationMap = () => Object.fromEntries(NATIONS.map(n => [n.id, true]));
@@ -299,7 +329,8 @@ const supabaseClient = window.supabase.createClient(
     }));
 
     return {
-      version: 2,
+      version: 3,
+      provinceProfileVersion: PROVINCE_PROFILE_VERSION,
       language: "en",
       scenarioName: "Iberian election",
       listLambda: 0.75,
@@ -396,20 +427,34 @@ const supabaseClient = window.supabase.createClient(
   };
 
   function ensureStateShape() {
-    state.version = 2;
+    state.version = 3;
     state.language = ["en","es"].includes(state.language) ? state.language : "en";
     state.listLambda = numberOr(state.listLambda, 0.75);
     state.memberLambda = numberOr(state.memberLambda, 0.65);
     state.lists = (state.lists || []).map(list => createList(list));
     if (state.lists.length < 2) state = defaultState();
 
-    state.provinceSettings = state.provinceSettings || {};
-    PROVINCES.forEach(province => {
-      state.provinceSettings[province.name] = {
-        turnout: state.provinceSettings[province.name]?.turnout ?? 1,
-        traits: { ...province.traits, ...(state.provinceSettings[province.name]?.traits || {}) }
-      };
-    });
+    const refreshProvinceProfiles =
+  numberOr(state.provinceProfileVersion, 0) < PROVINCE_PROFILE_VERSION;
+
+state.provinceSettings = state.provinceSettings || {};
+
+PROVINCES.forEach(province => {
+  const existingSettings = state.provinceSettings[province.name];
+
+  state.provinceSettings[province.name] = {
+    turnout: existingSettings?.turnout ?? 1,
+
+    traits: refreshProvinceProfiles
+      ? { ...province.traits }
+      : {
+          ...province.traits,
+          ...(existingSettings?.traits || {})
+        }
+  };
+});
+
+state.provinceProfileVersion = PROVINCE_PROFILE_VERSION;
 
     state.institutionalSenators = {
       ...Object.fromEntries(NATIONS.map(n => [n.id, [null, null]])),
@@ -963,23 +1008,42 @@ async function init() {
   }
 
   function renderNationCards() {
-    byId("nationCards").innerHTML = NATIONS.map(nation => {
-      const provinces = PROVINCES.filter(province => province.nation === nation.id);
-      const population = sum(provinces.map(province => province.population));
-      const provincialSeats = sum(provinces.map(province => province.congressSeats));
-      const winnerIndex = calculation.nationWinners[nation.id];
-      const winner = state.lists[winnerIndex];
-      const open = ui.openNation === nation.id;
+  byId("nationCards").innerHTML = NATIONS.map(nation => {
+    const provinces = PROVINCES.filter(
+      province => province.nation === nation.id
+    );
 
-            const nationTotalVotes = sum(calculation.nationListVotes[nation.id]);
+    const population = sum(
+      provinces.map(province => province.population)
+    );
 
-      const listRows = state.lists.map((list, listIndex) => ({
+    const provincialSeats = sum(
+      provinces.map(province => province.congressSeats)
+    );
+
+    const winnerIndex = calculation.nationWinners[nation.id];
+    const winner = state.lists[winnerIndex];
+    const open = ui.openNation === nation.id;
+
+    const nationTotalVotes = sum(
+      calculation.nationListVotes[nation.id]
+    );
+
+    const listRows = state.lists
+      .map((list, listIndex) => ({
         list,
         listIndex,
         share: calculation.nationListShares[nation.id][listIndex]
       }))
-        .sort((a, b) => b.share - a.share)
-        .map(({ list, listIndex, share }) => `
+      .sort((a, b) => b.share - a.share)
+      .map(({ list, listIndex, share }) => {
+        const listParliamentSeats =
+          calculation.nationListParliamentSeats[nation.id][listIndex];
+
+        const listDirectSenateSeats =
+          calculation.nationListSenateSeats[nation.id][listIndex];
+
+        return `
           <div class="nation-result-row">
             <span>${entityCell(list)}</span>
 
@@ -992,111 +1056,195 @@ async function init() {
 
             <strong>${formatPercent(share)}</strong>
 
-            <strong>
-              ${calculation.nationListParliamentSeats[nation.id][listIndex]}
-            </strong>
+            <strong>${listParliamentSeats}</strong>
 
-            <strong>
-              ${calculation.nationListSenateSeats[nation.id][listIndex]}
-            </strong>
+            <strong>${listDirectSenateSeats}</strong>
           </div>
 
           ${list.members.length > 1 ? `
             <div class="member-mini-list">
               ${list.members.map((member, memberIndex) => {
                 const memberVotes =
-                  calculation.nationMemberVotes[nation.id][listIndex][memberIndex];
+                  calculation.nationMemberVotes[nation.id]
+                    [listIndex][memberIndex];
 
-                const totalShare = nationTotalVotes > 0
+                const totalNationShare = nationTotalVotes > 0
                   ? memberVotes / nationTotalVotes
                   : 0;
 
-                const senateSeats =
-                  calculation.nationMemberSenateSeats[nation.id][listIndex][memberIndex];
+                const memberParliamentSeats =
+                  calculation.nationMemberParliamentSeats[nation.id]
+                    [listIndex][memberIndex];
+
+                const memberDirectSenateSeats =
+                  calculation.nationMemberSenateSeats[nation.id]
+                    [listIndex][memberIndex];
 
                 return `
                   <span>
                     ${memberCell(member, list)}
-                    <strong>${formatPercent(totalShare)}</strong>
+
+                    <strong>
+                      ${formatPercent(totalNationShare)}
+                    </strong>
+
                     <small>
-                      · ${senateSeats} ${t("senate").toLowerCase()}
+                      · ${memberParliamentSeats}
+                      ${t("parliament").toLowerCase()}
+
+                      · ${memberDirectSenateSeats}
+                      ${t("directSenate").toLowerCase()}
                     </small>
                   </span>
                 `;
               }).join("")}
             </div>
           ` : ""}
-        `).join("");
+        `;
+      })
+      .join("");
 
-      const provinceButtons = provinces.map(province => {
-        const provinceIndex = PROVINCES.findIndex(item => item.name === province.name);
-        const provinceWinner = state.lists[calculation.provinceWinners[provinceIndex]];
-        return `
-          <button class="province-chip" data-open-province="${escapeHtml(province.name)}">
-            <strong>${escapeHtml(province.name)}</strong>
-            <span>${formatInteger(province.population)} · ${province.congressSeats} ${t("seats")}</span>
-            <span>${t("winner")}: ${escapeHtml(provinceWinner.shortName)}</span>
-          </button>`;
-      }).join("");
+    const provinceButtons = provinces.map(province => {
+      const provinceIndex = PROVINCES.findIndex(
+        item => item.name === province.name
+      );
+
+      const provinceWinner =
+        state.lists[calculation.provinceWinners[provinceIndex]];
 
       return `
-        <article class="nation-card ${open ? "is-open" : ""}">
-          <button class="nation-card__button" data-toggle-nation="${nation.id}">
-            <div class="nation-card__top">
-              <div class="nation-card__title">
-                <span class="nation-card__accent" style="background:${nation.colour}"></span>
-                <div><h3>${t(nation.id)}</h3><span>${provinces.length} ${t("provinces").toLowerCase()} · ${formatInteger(population)}</span></div>
+        <button
+          class="province-chip"
+          data-open-province="${escapeHtml(province.name)}"
+        >
+          <strong>${escapeHtml(province.name)}</strong>
+
+          <span>
+            ${formatInteger(province.population)}
+            · ${province.congressSeats} ${t("seats")}
+          </span>
+
+          <span>
+            ${t("winner")}: ${escapeHtml(provinceWinner.shortName)}
+          </span>
+        </button>
+      `;
+    }).join("");
+
+    return `
+      <article class="nation-card ${open ? "is-open" : ""}">
+        <button
+          class="nation-card__button"
+          data-toggle-nation="${nation.id}"
+        >
+          <div class="nation-card__top">
+            <div class="nation-card__title">
+              <span
+                class="nation-card__accent"
+                style="background:${nation.colour}"
+              ></span>
+
+              <div>
+                <h3>${t(nation.id)}</h3>
+
+                <span>
+                  ${provinces.length}
+                  ${t("provinces").toLowerCase()}
+                  · ${formatInteger(population)}
+                </span>
               </div>
-              <span class="nation-card__arrow">›</span>
             </div>
-            <div class="nation-card__metrics">
-              <div class="nation-metric"><span>${t("winner")}</span><strong>${escapeHtml(winner.shortName)}</strong></div>
-              <div class="nation-metric"><span>${t("percentage")}</span><strong>${formatPercent(calculation.nationListShares[nation.id][winnerIndex])}</strong></div>
-              <div class="nation-metric"><span>${t("parliament")}</span><strong>${nation.parliamentSeats}</strong></div>
-              <div class="nation-metric"><span>${t("provincialDeputies")}</span><strong>${provincialSeats}</strong></div>
+
+            <span class="nation-card__arrow">›</span>
+          </div>
+
+          <div class="nation-card__metrics">
+            <div class="nation-metric">
+              <span>${t("winner")}</span>
+              <strong>${escapeHtml(winner.shortName)}</strong>
             </div>
-          </button>
-          <div class="nation-card__detail">
-            <div class="nation-card__detail-inner">
-              <div class="nation-card__detail-content">
-                <div class="nation-detail-grid">
-                  <div>
-                                        <h3>${t("aggregateResult")}</h3>
 
-                    <div class="nation-result-header">
-                      <span>${t("electoralList")}</span>
-                      <span></span>
-                      <span>${t("percentage")}</span>
-                      <span>${t("parliament")}</span>
-                      <span>${t("senate")}</span>
-                    </div>
+            <div class="nation-metric">
+              <span>${t("percentage")}</span>
+              <strong>
+                ${formatPercent(
+                  calculation.nationListShares[nation.id][winnerIndex]
+                )}
+              </strong>
+            </div>
 
-                    <div class="nation-result-list">${listRows}</div>
+            <div class="nation-metric">
+              <span>${t("parliament")}</span>
+              <strong>${nation.parliamentSeats}</strong>
+            </div>
+
+            <div class="nation-metric">
+              <span>${t("provincialDeputies")}</span>
+              <strong>${provincialSeats}</strong>
+            </div>
+          </div>
+        </button>
+
+        <div class="nation-card__detail">
+          <div class="nation-card__detail-inner">
+            <div class="nation-card__detail-content">
+              <div class="nation-detail-grid">
+
+                <div>
+                  <h3>${t("aggregateResult")}</h3>
+
+                  <div class="nation-result-header">
+                    <span>${t("electoralList")}</span>
+                    <span></span>
+                    <span>${t("percentage")}</span>
+                    <span>${t("parliament")}</span>
+                    <span>${t("directSenate")}</span>
                   </div>
-                  <div class="nation-institution-grid">
-                    <div class="nation-institution-card">
-                      <span>${t("parliament")}</span>
-                      <strong>${nation.parliamentSeats}</strong>
-                      <small>${t("majority")}: ${Math.floor(nation.parliamentSeats / 2) + 1}</small>
-                    </div>
-                    <div class="nation-institution-card">
-                      <span>${t("senate")}</span>
-                      <strong>${nation.directSenators} + 2</strong>
-                      <small>${t("directSenate")} + ${t("institutionalSenators").toLowerCase()}</small>
-                    </div>
-                  </div>
-                  <div class="nation-provinces">
-                    <h4>${t("provinces")}</h4>
-                    <div class="province-chip-grid">${provinceButtons}</div>
+
+                  <div class="nation-result-list">
+                    ${listRows}
                   </div>
                 </div>
+
+                <div class="nation-institution-grid">
+                  <div class="nation-institution-card">
+                    <span>${t("parliament")}</span>
+                    <strong>${nation.parliamentSeats}</strong>
+
+                    <small>
+                      ${t("majority")}:
+                      ${Math.floor(nation.parliamentSeats / 2) + 1}
+                    </small>
+                  </div>
+
+                  <div class="nation-institution-card">
+                    <span>${t("senate")}</span>
+                    <strong>${nation.directSenators} + 2</strong>
+
+                    <small>
+                      ${t("directSenate")}
+                      +
+                      ${t("institutionalSenators").toLowerCase()}
+                    </small>
+                  </div>
+                </div>
+
+                <div class="nation-provinces">
+                  <h4>${t("provinces")}</h4>
+
+                  <div class="province-chip-grid">
+                    ${provinceButtons}
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
-        </article>`;
-    }).join("");
-  }
-
+        </div>
+      </article>
+    `;
+  }).join("");
+}
   function renderTerritorialTable() {
     const level = ui.territorialLevel;
     byId("territorialTableHead").innerHTML = `

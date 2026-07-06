@@ -761,11 +761,11 @@ input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .nation-result-row {
   display: grid;
   grid-template-columns:
-    minmax(110px, 0.68fr)
-    minmax(120px, 1fr)
-    70px
-    76px
-    62px;
+    minmax(125px, 0.75fr)
+    minmax(105px, 1fr)
+    72px
+    84px
+    92px;
   align-items: center;
   gap: 9px;
 }
@@ -1491,6 +1491,23 @@ input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
     .nation-result-header,
   .nation-result-row {
     grid-template-columns: minmax(95px, 1fr) 64px 64px 54px;
+    .nation-result-header,
+.nation-result-row {
+  grid-template-columns:
+    minmax(92px, 1fr)
+    64px
+    70px
+    76px;
+}
+
+.nation-result-header > span:nth-child(2),
+.nation-result-row__track {
+  display: none;
+}
+
+.member-mini-list {
+  margin-left: 0;
+}
   }
 
   .nation-result-header > span:nth-child(2),
