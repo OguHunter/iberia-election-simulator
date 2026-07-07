@@ -52,6 +52,14 @@ const supabaseClient = window.supabase.createClient(
       adminRealtime: "Changes recalculate the simulation in real time.", listsAndMembers: "Lists & members",
       listAffinities: "List affinities", memberAffinities: "Member affinities", provinceProfiles: "Province profiles",
       iberiaSplit: "200-seat split", directAdjustments: "Direct adjustments", diagnostics: "Diagnostics",
+      settingsBackup: "Settings backup", settingsBackupTitle: "Download or restore the complete simulator configuration",
+      settingsBackupHint: "The backup contains every electoral list, member party, name, colour, vote result, affinity, province profile, direct modifier, seat-split setting and institutional Senate assignment.",
+      downloadSettings: "Download current settings", uploadSettings: "Upload settings", chooseSettingsFile: "Choose JSON or text file",
+      settingsText: "Settings text", applySettings: "Apply uploaded settings", settingsDownloaded: "Complete settings downloaded.",
+      settingsImported: "Complete settings imported successfully.", invalidSettings: "The settings file is not valid JSON or does not contain usable electoral lists.",
+      confirmImportSettings: "Replace every current simulator setting with the uploaded backup?", backupIncludes: "Included in this backup",
+      backupParties: "Lists, member parties, names and colours", backupResults: "Current results and all territorial affinities",
+      backupProvinces: "Province traits, turnout weights and direct adjustments", backupInstitutions: "Internal seat rules and institutional senators",
       storedLocally: "Stored locally in this browser.", discard: "Discard", saveChanges: "Save changes",
       all: "All", party: "Party", list: "List", member: "Member", threshold: "Threshold",
       iberiaWide: "Iberia-wide", provincial: "Provincial", total: "Total", eligible: "Eligible", belowThreshold: "Below 5%",
@@ -142,6 +150,14 @@ const supabaseClient = window.supabase.createClient(
       adminRealtime: "Los cambios recalculan la simulación en tiempo real.", listsAndMembers: "Listas y miembros",
       listAffinities: "Afinidades de listas", memberAffinities: "Afinidades de miembros", provinceProfiles: "Perfiles provinciales",
       iberiaSplit: "Reparto de 200", directAdjustments: "Ajustes directos", diagnostics: "Diagnóstico",
+      settingsBackup: "Copia de configuración", settingsBackupTitle: "Descargar o restaurar la configuración completa del simulador",
+      settingsBackupHint: "La copia contiene todas las listas electorales, partidos miembros, nombres, colores, resultados, afinidades, perfiles provinciales, ajustes directos, reglas internas de reparto y asignaciones del Senado institucional.",
+      downloadSettings: "Descargar configuración actual", uploadSettings: "Subir configuración", chooseSettingsFile: "Elegir archivo JSON o de texto",
+      settingsText: "Texto de configuración", applySettings: "Aplicar configuración subida", settingsDownloaded: "Configuración completa descargada.",
+      settingsImported: "Configuración completa importada correctamente.", invalidSettings: "El archivo no es JSON válido o no contiene listas electorales utilizables.",
+      confirmImportSettings: "¿Sustituir toda la configuración actual por la copia subida?", backupIncludes: "Incluido en esta copia",
+      backupParties: "Listas, partidos miembros, nombres y colores", backupResults: "Resultados actuales y todas las afinidades territoriales",
+      backupProvinces: "Rasgos provinciales, pesos de participación y ajustes directos", backupInstitutions: "Reglas internas de reparto y senadores institucionales",
       storedLocally: "Guardado localmente en este navegador.", discard: "Descartar", saveChanges: "Guardar cambios",
       all: "Todos", party: "Partido", list: "Lista", member: "Miembro", threshold: "Umbral",
       iberiaWide: "Ibéricos", provincial: "Provinciales", total: "Total", eligible: "Elegible", belowThreshold: "Bajo el 5 %",
@@ -1551,7 +1567,8 @@ async function init() {
       iberiaSplit: renderAdminIberiaSplit,
       directAdjustments: renderAdminDirectAdjustments,
       institutional: renderAdminInstitutional,
-      diagnostics: renderAdminDiagnostics
+      diagnostics: renderAdminDiagnostics,
+      settingsBackup: renderAdminSettingsBackup
     };
     byId("adminContent").innerHTML = (renderers[ui.adminTab] || renderAdminStructure)();
   }
@@ -1847,6 +1864,127 @@ async function init() {
     `;
   }
 
+
+  function renderAdminSettingsBackup() {
+    return `
+      ${adminIntro(t("settingsBackup").toUpperCase(), t("settingsBackupTitle"), t("settingsBackupHint"))}
+      <section class="admin-block settings-backup-panel">
+        <div class="settings-backup-grid">
+          <div class="settings-backup-card settings-backup-card--download">
+            <span class="settings-backup-icon" aria-hidden="true">↓</span>
+            <h4>${t("downloadSettings")}</h4>
+            <p>${t("settingsBackupHint")}</p>
+            <button type="button" class="button button--primary" data-download-settings>${t("downloadSettings")}</button>
+          </div>
+          <div class="settings-backup-card">
+            <span class="settings-backup-icon" aria-hidden="true">↑</span>
+            <h4>${t("uploadSettings")}</h4>
+            <label class="field">
+              <span>${t("chooseSettingsFile")}</span>
+              <input id="settingsFileInput" type="file" accept=".json,.txt,application/json,text/plain" />
+            </label>
+            <label class="field">
+              <span>${t("settingsText")}</span>
+              <textarea id="settingsImportText" spellcheck="false" placeholder='{ "format": "mi-iberia-settings-v1", "state": { ... } }'></textarea>
+            </label>
+            <button type="button" class="button button--primary" data-apply-settings>${t("applySettings")}</button>
+          </div>
+        </div>
+        <div class="backup-includes">
+          <strong>${t("backupIncludes")}</strong>
+          <div>
+            <span>✓ ${t("backupParties")}</span>
+            <span>✓ ${t("backupResults")}</span>
+            <span>✓ ${t("backupProvinces")}</span>
+            <span>✓ ${t("backupInstitutions")}</span>
+          </div>
+        </div>
+      </section>`;
+  }
+
+  function settingsExportPayload() {
+    return {
+      format: "mi-iberia-settings-v1",
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      source: "iberian-election-simulator",
+      state: structuredClone(state)
+    };
+  }
+
+  function safeSettingsFilename(value) {
+    const base = String(value || "iberian-election-settings")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "iberian-election-settings";
+    return `${base}-settings.json`;
+  }
+
+  function downloadCurrentSettings() {
+    const payload = JSON.stringify(settingsExportPayload(), null, 2);
+    const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = safeSettingsFilename(state.scenarioName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast(t("settingsDownloaded"), "success");
+  }
+
+  function normaliseImportedSettings(raw) {
+    const candidate = raw?.state || raw?.settings || raw?.data || raw;
+    if (!candidate || !Array.isArray(candidate.lists) || candidate.lists.length < 2) {
+      throw new Error("Invalid settings payload");
+    }
+
+    const defaults = defaultState();
+    return {
+      version: 3,
+      provinceProfileVersion: numberOr(candidate.provinceProfileVersion, PROVINCE_PROFILE_VERSION),
+      language: ["en", "es"].includes(candidate.language) ? candidate.language : state.language,
+      scenarioName: String(candidate.scenarioName || defaults.scenarioName),
+      listLambda: numberOr(candidate.listLambda, defaults.listLambda),
+      memberLambda: numberOr(candidate.memberLambda, defaults.memberLambda),
+      lists: candidate.lists.map(list => createList(list)),
+      provinceSettings: structuredClone(candidate.provinceSettings || defaults.provinceSettings),
+      institutionalSenators: structuredClone(candidate.institutionalSenators || defaults.institutionalSenators)
+    };
+  }
+
+  function importSettingsText(text) {
+    try {
+      const cleaned = String(text || "").trim()
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "");
+      const parsed = JSON.parse(cleaned);
+      if (!window.confirm(t("confirmImportSettings"))) return;
+
+      state = normaliseImportedSettings(parsed);
+      ensureStateShape();
+      resetUi();
+      saveState();
+      adminSnapshot = structuredClone(state);
+      adminDirty = 0;
+      recalculateAndRender();
+      ui.adminTab = "settingsBackup";
+      document.querySelectorAll(".admin-tab").forEach(button =>
+        button.classList.toggle("is-active", button.dataset.adminTab === "settingsBackup")
+      );
+      renderAdminContent();
+      updateAdminChangeCount();
+      toast(t("settingsImported"), "success");
+    } catch (error) {
+      console.warn("Settings import failed", error);
+      toast(t("invalidSettings"), "danger");
+    }
+  }
+
   function renderAdminDiagnostics() {
     const assigned = sum(NATIONS.map(nation => state.institutionalSenators[nation.id].filter(Boolean).length));
     return `
@@ -2075,6 +2213,19 @@ async function init() {
       return;
     }
 
+    const downloadSettingsButton = event.target.closest("[data-download-settings]");
+    if (downloadSettingsButton) {
+      downloadCurrentSettings();
+      return;
+    }
+
+    const applySettingsButton = event.target.closest("[data-apply-settings]");
+    if (applySettingsButton) {
+      const text = byId("settingsImportText")?.value || "";
+      importSettingsText(text);
+      return;
+    }
+
     const adminTab = event.target.closest("[data-admin-tab]");
     if (adminTab) {
       ui.adminTab = adminTab.dataset.adminTab;
@@ -2145,6 +2296,16 @@ async function init() {
   }
 
   function handleDelegatedChange(event) {
+    if (event.target.id === "settingsFileInput") {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      file.text().then(text => {
+        const textarea = byId("settingsImportText");
+        if (textarea) textarea.value = text;
+      }).catch(() => toast(t("invalidSettings"), "danger"));
+      return;
+    }
+
     const adminSelect = event.target.closest("[data-admin-select]");
     if (adminSelect) {
       applyAdminSelection(adminSelect);

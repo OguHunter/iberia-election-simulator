@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Interactive Iberian election simulator" />
   <title>Iberian Election Simulator</title>
+  <link rel="icon" type="image/png" href="assets/iberia-crest.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#summary" aria-label="Iberian Election Simulator">
-      <span class="brand__mark">I</span>
+      <span class="brand__mark"><img src="assets/iberia-crest.png" alt="" /></span>
       <span class="brand__copy">
         <strong data-i18n="appTitle">Iberian Election Simulator</strong>
         <small id="scenarioNameLabel">Iberian election</small>
@@ -41,6 +42,7 @@
 
   <main class="page-shell">
     <section id="summary" class="hero">
+      <img class="hero__watermark" src="assets/iberia-watermark.png" alt="" aria-hidden="true" />
       <div class="hero__copy">
         <span class="eyebrow" data-i18n="simulatorEyebrow">ELECTION SIMULATOR</span>
         <h1 data-i18n="heroTitle">From one Iberia-wide result to every province, parliament and senator.</h1>
@@ -309,9 +311,12 @@
   </main>
 
   <footer class="page-footer">
-    <div>
-      <strong data-i18n="appTitle">Iberian Election Simulator</strong>
-      <span data-i18n="localApp">Local HTML, CSS and JavaScript application</span>
+    <div class="footer-brand">
+      <img src="assets/iberia-crest.png" alt="" />
+      <div>
+        <strong data-i18n="appTitle">Iberian Election Simulator</strong>
+        <span data-i18n="localApp">Made by Villa</span>
+      </div>
     </div>
     <button id="resetAllBtn" class="button button--ghost button--small" data-i18n="resetSimulation">Reset simulation</button>
   </footer>
@@ -435,6 +440,7 @@
       <button class="admin-tab" data-admin-tab="directAdjustments" data-i18n="directAdjustments">Direct adjustments</button>
       <button class="admin-tab" data-admin-tab="institutional" data-i18n="institutionalSenators">Institutional senators</button>
       <button class="admin-tab" data-admin-tab="diagnostics" data-i18n="diagnostics">Diagnostics</button>
+      <button class="admin-tab" data-admin-tab="settingsBackup" data-i18n="settingsBackup">Settings backup</button>
     </div>
 
     <div id="adminContent" class="admin-drawer__content"></div>
